@@ -39,6 +39,8 @@ public:
 private:
 	CComboBox m_comb1;
 	CComboBox m_comb2;
+	CComboBox combo_AreaMode;
+	CComboBox combo_ScendMode;
 public:
 	CMscomm1 m_mscom;
 private:
@@ -48,7 +50,13 @@ public:
 	afx_msg void OnBnClickedButtonOpen();
 	afx_msg void OnBnClickedButtonClear();
 	afx_msg void OnBnClickedButtonSend();
+	afx_msg void proceedDataSend();
 	DECLARE_EVENTSINK_MAP()
 	void OnCommMscomm1();
 	CEdit m_Edit;
+	int position[4];
+	int myScreenWidth;
+	int myScreenHeight;
+	CStatic m_Resolving;
+
 };
