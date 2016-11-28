@@ -5,6 +5,8 @@
 #pragma once
 #include "afxwin.h"
 #include "mscomm1.h"
+#include "screenCap.h"
+
 
 // CvClsDlg 对话框
 class CvClsDlg : public CDialogEx
@@ -12,7 +14,7 @@ class CvClsDlg : public CDialogEx
 // 构造
 public:
 	CvClsDlg(CWnd* pParent = NULL);	// 标准构造函数
-
+	screenCap screenCapture;
 // 对话框数据
 	enum { IDD = IDD_VCLS_DIALOG };
 
@@ -34,8 +36,6 @@ public:
 	afx_msg void OnEnChangeEdit1();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedButton1();
-	afx_msg void OnEnChangeEdit2();
-	afx_msg void OnEnChangeEdit3();
 private:
 	CComboBox m_comb1;
 	CComboBox m_comb2;
@@ -50,13 +50,16 @@ public:
 	afx_msg void OnBnClickedButtonOpen();
 	afx_msg void OnBnClickedButtonClear();
 	afx_msg void OnBnClickedButtonSend();
-	afx_msg void proceedDataSend();
+	afx_msg void proceedDataSend(int cmdParam,int argv);
 	DECLARE_EVENTSINK_MAP()
 	void OnCommMscomm1();
 	CEdit m_Edit;
 	int position[4];
 	int myScreenWidth;
 	int myScreenHeight;
+	int screenCapDlg;
 	CStatic m_Resolving;
 
+	afx_msg void OnCbnSelchangeCombo2();
+	afx_msg void OnCbnSelchangeCombo1();
 };

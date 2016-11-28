@@ -80,12 +80,12 @@ BEGIN_MESSAGE_MAP(CvClsDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &CvClsDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDC_BUTTON1, &CvClsDlg::OnBnClickedButton1)
-	ON_EN_CHANGE(IDC_EDIT2, &CvClsDlg::OnEnChangeEdit2)
-	ON_EN_CHANGE(IDC_EDIT3, &CvClsDlg::OnEnChangeEdit3)	
 	ON_BN_CLICKED(IDC_BUTTON_OPEN, &CvClsDlg::OnBnClickedButtonOpen)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR, &CvClsDlg::OnBnClickedButtonClear)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CvClsDlg::OnBnClickedButtonSend)
 
+	ON_CBN_SELCHANGE(IDC_COMBO2, &CvClsDlg::OnCbnSelchangeCombo2)
+	ON_CBN_SELCHANGE(IDC_COMBO1, &CvClsDlg::OnCbnSelchangeCombo1)
 END_MESSAGE_MAP()
 
 
@@ -140,14 +140,26 @@ for(int i=0;i<12;i++)
 m_comb2.SetCurSel(0);//预置波特率为"115200" 
 	
 	//set scene mode 
-	CString str2[]={_T(""),_T("MILD"),_T("MODERATE"),_T("FOG"),_T("MAX"),_T("DARK"),_T("MEDICAL")};
+	CString str2[]={_T(""),_T("MILD(轻微)"),_T("MODERATE(中度)"),_T("MAX(最大)"),_T("FOG(雾)"),_T("DARK(黑暗)"),_T("MEDICAL(医疗)")};
 	for(int i=0;i<7;i++)
    {   
-   int judge_tf = combo_ScendMode.AddString(str2[i]);
+   //int judge_tf = combo_ScendMode.AddString(str2[i]);
+	int judge_tf = combo_ScendMode.InsertString(i,str2[i]);
    if((judge_tf==CB_ERR)||(judge_tf==CB_ERRSPACE))
         MessageBox(_T("build baud error!"));   
    }    	
 	combo_ScendMode.SetCurSel(0);
+
+	//set area mode 
+	CString str3[]={_T(""),_T("WINDOW"),_T("R_SLIP"),_T("FULL"),_T("OFF")};
+	for(int i=0;i<5;i++)
+   {   
+   //int judge_tf = combo_AreaMode.AddString(str3[i]);
+   int judge_tf = combo_AreaMode.InsertString(i,str3[i]);
+   if((judge_tf==CB_ERR)||(judge_tf==CB_ERRSPACE))
+        MessageBox(_T("build baud error!"));   
+   }    	
+	combo_AreaMode.SetCurSel(0);
 
 	//读取，显示分辨率
 	myScreenWidth = GetSystemMetrics ( SM_CXSCREEN ); 
@@ -156,6 +168,8 @@ m_comb2.SetCurSel(0);//预置波特率为"115200"
 	CString w;
 	w.Format(_T("%d  %d"),myScreenWidth,myScreenHeight);
 	m_Resolving.SetWindowTextW((w));
+
+	screenCapDlg=0;
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -208,11 +222,19 @@ HCURSOR CvClsDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+extern CPoint screenCap_ptEnd;                     
+extern CPoint screenCap_ptBegin; 
+extern int ifFinish;
 
 void CvClsDlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
-	proceedDataSend();
+	position[0] = screenCap_ptBegin.x*100/myScreenWidth;				
+	position[1] = screenCap_ptBegin.y*100/myScreenHeight;
+	position[2] = screenCap_ptEnd.x*100/myScreenWidth;				
+	position[3] = screenCap_ptEnd.y*100/myScreenHeight;
+	
+	proceedDataSend(0,0);
 	CEdit* startX;
 	startX = (CEdit*) GetDlgItem(IDC_EDIT2);
 	CEdit* startY;
@@ -230,7 +252,22 @@ void CvClsDlg::OnBnClickedOk()
 
 void CvClsDlg::OnBnClickedButton1()
 {
+
+
+	if(screenCapDlg==0)
+	{
+	screenCapture.Create(IDD_SCREENCAP, NULL);
+	screenCapDlg=2;
+	}else{
+	//screenCapture.EnableWindow(1);
+	screenCapture.ShowWindow(SW_SHOW);
+	}
 	// TODO: Add your control notification handler code here
+	/*while(1){
+	if(ifFinish==2)
+		break;
+	Sleep(2);
+	}
 	POINT point;      
     unsigned long rgb;  
     CDC *scr;
@@ -244,68 +281,42 @@ void CvClsDlg::OnBnClickedButton1()
 	CEdit* endY;
     endY = (CEdit*) GetDlgItem(IDC_EDIT5);
 	TCHAR chTemp[10];
-    printf("please input a number:");
+    //printf("please input a number:");
 	//MessageBox(width,height);   
 
-	Sleep(2); 
-	while(1)  
-    {  
+	//Sleep(2); 
+	//while(1)  
+    //{  
 		
-        if(GetAsyncKeyState(VK_LBUTTON)& 0x01)  //监视左键  
-        {  
+    
             //scr=GetDC();                     //获取屏幕设备场景  
-            GetCursorPos(&point);             //获取当前鼠标位置  
+           // GetCursorPos(&point);             //获取当前鼠标位置  
             //printf("x %d y %d",point.x,point.y); 
-			if(clilckNo == 1){
-				position[0] = point.x*100/myScreenWidth;				
-				position[1] = point.y*100/myScreenHeight;
+			//if(clilckNo == 1){
+				position[0] = screenCap_ptBegin.x*100/myScreenWidth;				
+				position[1] = screenCap_ptBegin.y*100/myScreenHeight;
 				swprintf(chTemp,L"%d",point.x);			
 				startX->SetWindowTextW(chTemp);
 				startX->SetFocus();
 				swprintf(chTemp,L"%d",point.y);	
 				startY->SetWindowTextW(chTemp);
 				startY->SetFocus();
-				UpdateData(true);
-				Sleep(5); 
-			}
-			if(clilckNo == 2){
-				position[2] = point.x*100/myScreenWidth;				
-				position[3] = point.y*100/myScreenHeight;
+				//UpdateData(true);
+				//Sleep(5); 
+			//}
+			//if(clilckNo == 2){
+				position[2] = screenCap_ptEnd.x*100/myScreenWidth;				
+				position[3] = screenCap_ptEnd.y*100/myScreenHeight;
 				swprintf(chTemp,L"%d",point.x);
 				endX->SetWindowTextW(chTemp);
 				swprintf(chTemp,L"%d",point.y);
 				endY->SetWindowTextW(chTemp);
-			}			
-			clilckNo++;
-            //rgb=GetPixel(scr,point.x,point.y);//获取鼠标当前位置的颜色  
-			//ReleaseDC(scr);                 //释放屏幕设备场景
-         }
-         if(clilckNo==3)
-			break;
-         
-    }
-}
-
-
-void CvClsDlg::OnEnChangeEdit2()
-{
-	// TODO:  If this is a RICHEDIT control, the control will not
-	// send this notification unless you override the CDialogEx::OnInitDialog()
-	// function and call CRichEditCtrl().SetEventMask()
-	// with the ENM_CHANGE flag ORed into the mask.
-
-	// TODO:  Add your control notification handler code here
-}
-
-
-void CvClsDlg::OnEnChangeEdit3()
-{
-	// TODO:  If this is a RICHEDIT control, the control will not
-	// send this notification unless you override the CDialogEx::OnInitDialog()
-	// function and call CRichEditCtrl().SetEventMask()
-	// with the ENM_CHANGE flag ORed into the mask.
-
-	// TODO:  Add your control notification handler code here
+			//}			
+			//clilckNo++;
+     
+	//}
+	*/
+	
 }
 
 void CvClsDlg::OnBnClickedButtonOpen()
@@ -361,51 +372,124 @@ void CvClsDlg::OnBnClickedButtonClear()
 	//更新数据
 }
 #define CmdLength 12
-void CvClsDlg::proceedDataSend()
+void CvClsDlg::proceedDataSend(int cmdParam,int argv)
 {
 	CByteArray HexDataBuf;
+	CByteArray HexDataBufCtrl;
 	int i = 0;
 	int j=0 ;
-	CHAR  doResolCmd[CmdLength][12]={"SEWL","SEWT","SEWR","SEWB","SPRO MAX","SPRO MILD"};
+	CHAR  doResolCmd[CmdLength][12]={"SEWL","SEWT","SEWR","SEWB"};
 	//swprintf(chTemp,L"%d",point.y);
-	char  sendCmd[][12]={0};
+	char  sendCmd[15]="SPRO";
+	char  sendCmd1[15]="SEVDWIN";
+	char  sendCmd2[15]="SEVDWIN WIN";
+	char  tmpbuf[12]={0};
 	BYTE SendBuf[128]={0};
+	BYTE SendBuf1[3]={0};
+	CByteArray  enterKey;
 	BYTE GetData[256]={0};
 	
 	int GetLen = 0;
 
-	if(position[0] > position[2]){
-		j =position[0];
-		position[0] = position[2];
-		position[2] = j;
-	}
-	if(position[1] > position[3]){
-		j =position[1];
-		position[1] = position[3];
-		position[3] = j;
+	switch(cmdParam){
+		case 0:
+		// do capture screen 
+			if(position[0] > position[2]){
+				j =position[0];
+				position[0] = position[2];
+				position[2] = j;
+			}
+			if(position[1] > position[3]){
+				j =position[1];
+				position[1] = position[3];
+				position[3] = j;
+			}
+
+			for(i=0;i<4;i++){
+				sprintf(doResolCmd[i],"%s %d",doResolCmd[i],position[i]);
+				GetLen = sizeof(doResolCmd[i]);
+				for(j=0; j<GetLen; j++)
+				{
+					GetData[j] = (BYTE)doResolCmd[i][j];
+					SendBuf[j]= (unsigned char)GetData[j];
+				}
+				SendBuf[GetLen]=13;
+				//将字符串转化为字节数据
+				HexDataBuf.SetSize(GetLen+1);            
+				//设置数组大小为帧长度  
+				for(j=0; j<(GetLen+1); j++)
+				{
+					HexDataBuf.SetAt(j,SendBuf[j]);
+				}
+				m_mscom.put_Output(COleVariant(HexDataBuf)); 
+				Sleep(30);
+	
+			}
+			break;
+		case 1:
+		// AreaMode
+			if(argv==1){
+			sprintf(sendCmd,"%s WIN",sendCmd1);
+			}else if(argv==2){
+			sprintf(sendCmd,"%s SS",sendCmd1);
+			}else if(argv==3){
+			sprintf(sendCmd,"%s FS",sendCmd1);
+			}else if(argv==4){
+			sprintf(sendCmd,"%s OFF",sendCmd1);
+			}		
+				GetLen = sizeof(sendCmd);
+				for(j=0; j<GetLen; j++)
+				{
+					GetData[j] = (BYTE)sendCmd[j];
+					SendBuf[j]= (unsigned char)GetData[j];
+				}
+				SendBuf[GetLen]=13;
+				//将字符串转化为字节数据
+				HexDataBuf.SetSize(GetLen+1);            
+				//设置数组大小为帧长度  
+				for(j=0; j<(GetLen+1); j++)
+				{
+					HexDataBuf.SetAt(j,SendBuf[j]);
+				}
+				m_mscom.put_Output(COleVariant(HexDataBuf)); 
+			break;
+		case 2:
+		//ScendMode
+			if(argv==1){
+			sprintf(sendCmd,"%s MILD",sendCmd);
+			}else if(argv==2){
+			sprintf(sendCmd,"%s MODERATE",sendCmd);
+			}else if(argv==3){
+			sprintf(sendCmd,"%s MAX",sendCmd);
+			}else if(argv==4){
+			sprintf(sendCmd,"%s FOG",sendCmd);
+			}else if(argv==5){
+			sprintf(sendCmd,"%s DARK",sendCmd);
+			}else if(argv==6){
+			sprintf(sendCmd,"%s MEDICAL",sendCmd);
+			}		
+				GetLen = sizeof(sendCmd);
+				for(j=0; j<GetLen; j++)
+				{
+					GetData[j] = (BYTE)sendCmd[j];
+					SendBuf[j]= (unsigned char)GetData[j];
+				}
+				SendBuf[GetLen]=13;
+				//将字符串转化为字节数据
+				HexDataBuf.SetSize(GetLen+1);            
+				//设置数组大小为帧长度  
+				for(j=0; j<(GetLen+1); j++)
+				{
+					HexDataBuf.SetAt(j,SendBuf[j]);
+				}
+				m_mscom.put_Output(COleVariant(HexDataBuf)); 
+			break;
+		default:
+			break;
+
 	}
 
-	for(i=0;i<4;i++){
-		sprintf(doResolCmd[i],"%s %d",doResolCmd[i],position[i]);
-		GetLen = sizeof(doResolCmd[i]);
-		for(j=0; j<GetLen; j++)
-		{
-			GetData[j] = (BYTE)doResolCmd[i][j];
-			SendBuf[j]= (unsigned char)GetData[j];
-		}
-		SendBuf[GetLen]=13;
-		//将字符串转化为字节数据
-		HexDataBuf.SetSize(GetLen+1);            
-		//设置数组大小为帧长度  
-		for(j=0; j<(GetLen+1); j++)
-		{
-			HexDataBuf.SetAt(j,SendBuf[j]);
-		}
-		m_mscom.put_Output(COleVariant(HexDataBuf)); 
-	
-	}
-	
-	
+	return;
 }
 
 void CvClsDlg::OnBnClickedButtonSend()
@@ -474,3 +558,40 @@ m_Edit.LineScroll(m_Edit.GetLineCount()-1,0);
 
 
 
+
+
+void CvClsDlg::OnCbnSelchangeCombo2()
+{
+	CString strWeb;   
+    int nSel;   
+  
+    // 获取组合框控件的列表框中选中项的索引   
+    nSel = combo_AreaMode.GetCurSel(); 
+	combo_AreaMode.GetLBText(nSel, strWeb);
+    // 根据选中项索引获取该项字符串
+	if(nSel >0){		
+		proceedDataSend(1,nSel);
+    
+	}
+    // 将组合框中选中的字符串显示到IDC_SEL_WEB_EDIT编辑框中  	
+	//MessageBox(strWeb);   
+    
+	// TODO: Add your control notification handler code here
+}
+
+
+void CvClsDlg::OnCbnSelchangeCombo1()
+{
+	// TODO: Add your control notification handler code here
+	CString strWeb;   
+    int nSel;   
+  
+    // 获取组合框控件的列表框中选中项的索引   
+    nSel = combo_ScendMode.GetCurSel(); 
+	combo_ScendMode.GetLBText(nSel, strWeb);
+    // 根据选中项索引获取该项字符串
+	if(nSel >0){		
+		proceedDataSend(2,nSel);
+    
+	}
+}
